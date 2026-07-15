@@ -1,0 +1,47 @@
+name: Reusable App CI
+
+on:
+  workflow_call:
+    inputs:
+      runtime-version:
+        type: string
+        default: "20"
+      project-name:
+        type: string
+        required: true
+      service-name:
+        type: string
+        required: true
+      image-tag:
+        type: string
+        required: true
+      push-image:
+        type: boolean
+        default: false
+    secrets:
+      REGISTRY_USERNAME:
+        required: false
+      REGISTRY_TOKEN:
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build app
+        uses: ./.github/actions/build-app
+        # ^ relative path works when called from same repo OR when reusable workflow + action are in same platform repo
+        with:
+          node-version: ${{ inputs.runtime-version }}
+      - name: Docker build + push
+        uses: ./.github/actions/docker-build-push
+        with:
+          image-name: ${{ inputs.project-name }}/${{ inputs.service-name }}
+          image-tag: ${{ inputs.image-tag }}
+          push: ${{ inputs.push-image }}
+          registry-username: ${{ secrets.REGISTRY_USERNAME || github.actor }}
+          registry-password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
