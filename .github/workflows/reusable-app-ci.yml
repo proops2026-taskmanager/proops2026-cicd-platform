@@ -20,7 +20,7 @@ on:
         default: false
     secrets:
       GHCR_TOKEN:
-        required: true
+        required: false
 
 jobs:
   build:
