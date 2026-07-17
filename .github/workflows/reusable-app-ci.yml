@@ -19,8 +19,8 @@ on:
         type: boolean
         default: false
     secrets:
-      REGISTRY_USERNAME:
-        required: false
+      GHCR_TOKEN:
+        required: true
 
 jobs:
   build:
@@ -62,4 +62,4 @@ jobs:
           image-tag: ${{ inputs.image-tag }}
           push: ${{ inputs.push-image }}
           registry-username: ${{ github.actor }}
-          registry-password: ${{ github.token }}
+          registry-password: ${{ secrets.GHCR_TOKEN }}
