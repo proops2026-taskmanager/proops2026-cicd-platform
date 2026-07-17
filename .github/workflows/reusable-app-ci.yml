@@ -21,8 +21,6 @@ on:
     secrets:
       REGISTRY_USERNAME:
         required: false
-      REGISTRY_TOKEN:
-        required: false
 
 jobs:
   build:
@@ -63,5 +61,5 @@ jobs:
           image-name: ${{ inputs.project-name }}/${{ inputs.service-name }}
           image-tag: ${{ inputs.image-tag }}
           push: ${{ inputs.push-image }}
-          registry-username: ${{ secrets.REGISTRY_USERNAME || github.actor }}
-          registry-password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
