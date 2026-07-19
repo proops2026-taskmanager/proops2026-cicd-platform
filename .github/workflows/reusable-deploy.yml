@@ -1,0 +1,53 @@
+name: Reusable Deploy
+on:
+  workflow_call:
+    inputs:
+      image-tag:    { type: string, required: true }
+      environment:  { type: string, required: true }
+      project-name: { type: string, required: true }
+      service-name: { type: string, required: true }
+    secrets:
+      GHCR_TOKEN: { required: true }
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1        # Day 24 pattern
+        with:
+          cluster_name: ci-${{ github.run_id }}
+          wait: 120s
+
+      - name: Create namespace
+        run: kubectl create namespace ${{ inputs.environment }}
+
+      - name: Create GHCR pull secret
+        run: |
+          kubectl -n ${{ inputs.environment }} create secret docker-registry ghcr-pull-secret \
+            --docker-server=ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GHCR_TOKEN }}
+
+      - name: Create app secrets 
+        run: |
+          kubectl -n ${{ inputs.environment }} create secret generic user-svc-secret \
+            --from-literal=DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy \
+            --from-literal=JWT_SECRET=ci-stub-secret-minimum-32-chars-long
+
+      - name: Apply manifests
+        run: kubectl -n ${{ inputs.environment }} apply -f k8s/
+
+      - name: Set image + wait
+        run: |
+          kubectl -n ${{ inputs.environment }} set image deployment/${{ inputs.service-name }} \
+            ${{ inputs.service-name }}=ghcr.io/${{ inputs.project-name }}/${{ inputs.service-name }}:${{ inputs.image-tag }}
+          kubectl -n ${{ inputs.environment }} rollout status deployment/${{ inputs.service-name }} --timeout=180s
+
+      - name: Verify
+        run: |
+          kubectl -n ${{ inputs.environment }} get pods -l app=${{ inputs.service-name }} -o wide
+          kubectl -n ${{ inputs.environment }} describe pod -l app=${{ inputs.service-name }} | grep -E "Image:|Status:"
