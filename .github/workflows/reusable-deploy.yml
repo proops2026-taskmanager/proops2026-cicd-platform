@@ -32,10 +32,10 @@ jobs:
             --docker-username=${{ github.actor }} \
             --docker-password=${{ secrets.GHCR_PAT }}
 
-      - name: Create app secrets 
+      - name: Create app secrets
         run: |
           kubectl -n ${{ inputs.environment }} create secret generic user-svc-secret \
-            --from-literal=DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy \
+            --from-literal=DATABASE_URL=postgresql://dummy:${{ secrets.DB_PASSWORD }}@localhost:5432/dummy \
             --from-literal=JWT_SECRET=ci-stub-secret-minimum-32-chars-long
 
       - name: Apply manifests
