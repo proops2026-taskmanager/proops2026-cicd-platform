@@ -1,5 +1,5 @@
 name: "Build App"
-description: "Set up runtime, install dependencies, run tests, produce coverage"
+description: "Set up runtime, install dependencies, scan dependencies for known CVEs, run tests, produce coverage"
 
 inputs:
   node-version:
@@ -23,6 +23,16 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: npm ci
+    - name: SCA scan (dependency vulnerabilities)
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        scan-type: fs
+        scan-ref: ${{ inputs.working-directory }}
+        scanners: vuln
+        severity: CRITICAL,HIGH
+        ignore-unfixed: true
+        exit-code: '1'
+        format: table
     - name: Test
       shell: bash
       working-directory: ${{ inputs.working-directory }}
