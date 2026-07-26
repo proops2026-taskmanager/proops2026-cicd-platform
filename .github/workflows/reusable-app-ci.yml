@@ -60,7 +60,7 @@ jobs:
         with:
           node-version: ${{ inputs.runtime-version }}
       - name: SonarCloud scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarqube-scan-action@v8
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
