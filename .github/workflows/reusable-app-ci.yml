@@ -18,6 +18,18 @@ on:
       push-image:
         type: boolean
         default: false
+      db-name:
+        description: "Postgres DB name for tests. Leave empty if this service has no database."
+        type: string
+        default: ""
+      service-port:
+        description: "Value written as PORT in .env.test"
+        type: string
+        required: true
+      extra-env:
+        description: "Extra lines appended verbatim to .env.test (e.g. JWT_SECRET=..., REDIS_URL=...)"
+        type: string
+        default: ""
     secrets:
       GHCR_TOKEN:
         required: false
@@ -36,8 +48,8 @@ jobs:
         env:
           POSTGRES_USER: app_user
           POSTGRES_PASSWORD: app_pass
-          POSTGRES_DB: users_test_db
-        ports: ['5433:5432']
+          POSTGRES_DB: ${{ inputs.db-name || 'ci_unused_db' }}
+        ports: ['5432:5432']
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -50,10 +62,11 @@ jobs:
       - name: Create test env
         shell: bash
         run: |
-          echo "DATABASE_URL=postgresql://app_user:app_pass@localhost:5433/users_test_db" >> .env.test
-          echo "JWT_SECRET=test_secret_minimum_32_characters_long" >> .env.test
-          echo "JWT_EXPIRES_IN=24h" >> .env.test
-          echo "PORT=3001" >> .env.test
+          if [ -n "${{ inputs.db-name }}" ]; then
+            echo "DATABASE_URL=postgresql://app_user:app_pass@localhost:5432/${{ inputs.db-name }}" >> .env.test
+          fi
+          echo "PORT=${{ inputs.service-port }}" >> .env.test
+          echo "${{ inputs.extra-env }}" >> .env.test
       - name: Build app
         uses: proops2026-taskmanager/proops2026-cicd-platform/.github/actions/build-app@v1
         # ^ relative path works when called from same repo OR when reusable workflow + action are in same platform repo

@@ -6,6 +6,14 @@ on:
       environment:  { type: string, required: true }
       project-name: { type: string, required: true }
       service-name: { type: string, required: true }
+      secret-name:
+        description: "Name of the k8s Secret to create for this service. Leave empty if the service has no runtime secrets."
+        type: string
+        default: ""
+      secret-literals:
+        description: "Raw --from-literal=KEY=VALUE flags for the app secret (CI stub values only)"
+        type: string
+        default: ""
     secrets:
       GHCR_PAT: { required: true }
 
@@ -33,10 +41,10 @@ jobs:
             --docker-password=${{ secrets.GHCR_PAT }}
 
       - name: Create app secrets
+        if: inputs.secret-name != ''
         run: |
-          kubectl -n ${{ inputs.environment }} create secret generic user-svc-secret \
-            --from-literal=DATABASE_URL=postgresql://dummy:${{ secrets.DB_PASSWORD }}@localhost:5432/dummy \
-            --from-literal=JWT_SECRET=ci-stub-secret-minimum-32-chars-long
+          kubectl -n ${{ inputs.environment }} create secret generic ${{ inputs.secret-name }} \
+            ${{ inputs.secret-literals }}
 
       - name: Apply manifests
         run: kubectl -n ${{ inputs.environment }} apply -f k8s/
