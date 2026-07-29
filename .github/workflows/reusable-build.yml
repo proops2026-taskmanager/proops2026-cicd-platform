@@ -31,6 +31,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write
     services:
       postgres:
         image: postgres:15
@@ -54,12 +55,12 @@ jobs:
           fi
           echo "PORT=${{ inputs.service-port }}" >> .env.test
           echo "${{ inputs.extra-env }}" >> .env.test
-      - uses: proops2026-taskmanager/proops2026-cicd-platform/.github/actions/build-app@v2
+      - uses: proops2026-taskmanager/proops2026-cicd-platform/.github/actions/build-app@v3.1
         # ^ must be absolute — relative ./actions paths resolve against the CALLER's
         # checkout (user-service), not this platform repo. Same bug as Day 28.
       - id: set-tag
         run: echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
-      - uses: proops2026-taskmanager/proops2026-cicd-platform/.github/actions/docker-build-push@v2
+      - uses: proops2026-taskmanager/proops2026-cicd-platform/.github/actions/docker-build-push@v3.1
         with:
           image-name: ${{ inputs.project-name }}/${{ inputs.service-name }}
           image-tag: ${{ steps.set-tag.outputs.tag }}
